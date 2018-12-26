@@ -19,7 +19,7 @@ public class SampleServiceImpl implements SampleService{
 	Logger log = Logger.getLogger(this.getClass());
 	
 	
-	//아래의 name속성은 DI를 위함. 해당 클래스 정의 시, class선언 위에
+	//아래의 name속성은 DI를 위함. 해당 클래스 정의 시, class선언 위에다가
 	//예를 들어 @Repository("sampleDAO") 의 괄호안에 설정한 값을 name으로 연동하는 것.
 	@Resource(name="sampleDAO")
 	private SampleDAO sampleDAO;

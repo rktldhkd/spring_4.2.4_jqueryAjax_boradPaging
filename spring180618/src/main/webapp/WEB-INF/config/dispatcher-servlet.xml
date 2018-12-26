@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:p="http://www.springframework.org/schema/p"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="http://www.springframework.org/schema/beans"
+    xmlns:mvc="http://www.springframework.org/schema/mvc"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+       http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
+       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
+ 
+
+	<!-- DispatcherServlet Context: defines this servlet's request-processing infrastructure -->
+
+	<!-- 
+	* component-scan의 역할은 스프링에서 자동적으로 스테레오 타입의 어노테이션을 등록해주는 역할은 한다. 
+	* 단순히 이러한 어노테이션을 붙이기만 해도 각각 Controller, Service, DAO의 역할을 할 수 있었던 이유가 component-scan을 통해서 스프링이 자동적으로 bean을 등록시켜줌으로써 그 기능을 했던 것
+	* use-default-filters="false"라는 값을 주게되면 이와 같은 어노테이션을 자동으로 검색하지 않겠다는 뜻
+	* <context:include-filter> 태그에 해당하는 어노테이션만 검색하고 bean을 등록시켜 준다. 여기서는 Controller 어노테이션만 검색을 한 것
+	* 나머지 @Service, @Repository, @Component 어노테이션은 다른곳에서 component-scan을 하게 할 것
+	 -->
+	<context:component-scan base-package="myspring" use-default-filters="false">
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    </context:component-scan>
+	
+
+	<!-- web.xml에서 sevlet-mapping의 url-pattern을 '/'로 설정했다면, 이미지나 css파일등의 자원등을 
+		경로지정하여 불러올 때 dispatcher servlet이 먼저 가로채서 이미지나 css파일등을 못 불러올 수도 있다. resources 
+		태그는 dispatcher가 resources태그에서 지정한 경로를 거르지 말라고 하는 설정이다. <default-servlet-handler/>를 
+		설정하면 모든 경로를 다 허용할 수 있다. -->
+	<mvc:resources location="/resources/" mapping="/resources/**"></mvc:resources>
+	
+	
+	 <mvc:annotation-driven>
+        <mvc:argument-resolvers>
+            <bean class="myspring.common.resolver.CustomMapArgumentResolver"></bean>      
+        </mvc:argument-resolvers>
+    </mvc:annotation-driven>
+
+	
+	<!-- log4j 등을 위한 인터셉터 설정 -->
+	<!-- dispatcher와 동일한 위치에 인터셉터를 설정하였다. -->
+	<mvc:interceptors>
+        <mvc:interceptor>
+            <mvc:mapping path="/**"/><!-- 인터셉터가 동작할 url -->
+            <bean id="loggerInterceptor" class="myspring.common.logger.LoggerInterceptor"></bean>
+        </mvc:interceptor>
+    </mvc:interceptors>
+	
+	<!-- 
+	 *aop 설정 
+     * 	@Aspect 어노테이션 설정을 한 자원을 bean을 등록시켜주는 역할
+     *	지금 우리의 프로젝트는 2개의 컨텍스트가 설정이 되어있다. 
+		하나는 action-servlet.xml이고 다른 하나는 context-*.xml 파일이 그것인데, 이는 각각 Root Application Context, Servlet Context의 설정파일이다.
+		두개의 차이점은 다음과 같다.
+		
+		Root Application Context
+		- 최상단 컨텍스트 
+		- 서로 다른 서블릿 컨텍스트에서 공유하는 bean을 등록 
+		- 웹에서 사용되는 컨트롤러 등을 등록
+		- 서블릿 컨텍스트에서 등록된 bean을 사용할 수 없으며, 서블릿 컨텍스트와 루트 컨텍스트에서 동일한 bean을 설정할 경우, 서블릿 컨텍스트에서 설정한 bean만 동작
+		
+		Servlet Context
+		- 서블릿에서 이용되는 컨텍스트
+		- 여기서 정의된 bean은 다른 서블릿 컨텍스트와 공유할 수 없음
+		
+		따라서 Controller와 관련된 bean은 action-servlet.xml에 설정하고, Service, DAO, Component등은 context-*에 설정하게 된다.
+		SpringMVC 개발에서는 이렇게 설정하는것이 원칙이다. 
+		
+		우리가 설정한 AOP를 보면 Controller, Service, DAO의 3개 영역에서 모두 사용이 되어야 하는데, 한쪽의 컨텍스트에서만 설정하게 되면 다른 컨텍스트에서는 동작하지 않게 된다. 
+		예를 들어 action-servlet.xml에만 설정을 하면 Controller의 로그만 출력될 것이고, context-aspect.xml에서만 설정하면 Service, DAO에서만 로그가 출력이 될 것이다.
+
+      -->
+	<aop:aspectj-autoproxy/>
+    <bean id="loggerAspect" class="myspring.common.logger.LoggerAspect" />
+     
+
+	<bean class="org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping"/>
+    <bean class="org.springframework.web.servlet.view.BeanNameViewResolver" p:order="0" />
+    <bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter" />
+     <!-- 
+    	spring 3.2 이상 버전 부터는, MappingJacksonJasonView가 없어졌으므로 
+    	MappingJackson2JsonView 클래스를 사용. 이를 위해서 pom.xml에 org.codehaus... 대신
+    	com.fasterxml... 을 의존 추가해서 사용.
+    -->
+    <bean id="jsonView" class="org.springframework.web.servlet.view.json.MappingJackson2JsonView" /> 
+
+	
+	<!-- Resolves views selected for rendering by @Controllers to .jsp resources in the /WEB-INF/views directory -->
+	<!-- <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix" value="/WEB-INF/jsp/" />
+		<property name="suffix" value=".jsp" />
+	</bean>
+	 -->
+	<bean
+        class="org.springframework.web.servlet.view.UrlBasedViewResolver" p:order="1"
+        p:viewClass="org.springframework.web.servlet.view.JstlView"
+        p:prefix="/WEB-INF/jsp/" p:suffix=".jsp">
+    </bean>
+
+	
+</beans>

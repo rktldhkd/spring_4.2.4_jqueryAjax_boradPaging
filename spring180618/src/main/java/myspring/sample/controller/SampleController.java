@@ -35,6 +35,14 @@ public class SampleController {
 	}// end openSampleBoardList
 	 */	
 	
+	/**
+	 * @param commandMap
+	 * @return
+	 * @throws Exception
+	 * boardList 페이지 자체를 여는 컨트롤러.
+	 * 리스트 페이지의 데이터는 여기서 불러오지 않고, view단의 ajax에서
+	 * selectBoardList컨트롤러를 호출하여, ajax로 받아서 실시간 처리한다.
+	 */
 	@RequestMapping(value="/sample/openBoardList")
 	public ModelAndView openBoardList(CommandMap commandMap) throws Exception{
 		//게시판의 데이터를 불러오는 기능은 jsp단의 ajax로 처리해서 불러오기 때문에
@@ -44,11 +52,15 @@ public class SampleController {
 	    return mv;
 	}
 	 
-	/*
-	기존에는 ModelAndView에서 호출할 JSP 파일명이나 redirect를 수행했는데, 이번에는 jsonView라는 값이 들어가있는 것을 볼 수 있다. 
-	이는 앞에서 action-servlet.xml에 ' bean id="jsonView" class="org.springframework.web.servlet.view.json.MappingJackson2JsonView" '  를 선언했었던것을 기억해야 한다. 여기서 bean id가 jsonView였는데, 여기서 선언된 bean을 사용하는 것이다. 
-	이 jsonView는 데이터를 json 형식으로 변환해주는 역할을 수행한다. 
-	*/
+	/**
+	 * @param commandMap
+	 * @return
+	 * @throws Exception
+	 * 실데이터를 뽑아오는 비즈니스 로직. view단(boardList.jsp)의 ajax() 메소드에서 호출.
+	 * 기존에는 ModelAndView에서 호출할 JSP 파일명이나 redirect를 수행했는데, 이번에는 jsonView라는 값이 들어가있는 것을 볼 수 있다. 
+	 * 이는 앞에서 action-servlet.xml에 ' bean id="jsonView" class="org.springframework.web.servlet.view.json.MappingJackson2JsonView" '  를 선언했었던것을 기억해야 한다. 여기서 bean id가 jsonView였는데, 여기서 선언된 bean을 사용하는 것이다. 
+	 * 이 jsonView는 데이터를 json 형식으로 변환해주는 역할을 수행한다. 
+	 */
 	@RequestMapping(value="/sample/selectBoardList")
 	public ModelAndView selectBoardList(CommandMap commandMap) throws Exception{
 	    ModelAndView mv = new ModelAndView("jsonView"); //데이터를 json 형식으로 변환
